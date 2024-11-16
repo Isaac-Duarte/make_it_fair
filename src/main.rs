@@ -22,3 +22,14 @@ async fn main() -> Result<()> {
 
     Ok(())
 }
+
+// fn get_pawn_name(process: &ProcessHandle, controller: u64) -> String {
+//     let name_pointer = process
+//         .read_u64(controller + cs2dumper::client::CBasePlayerController::m_iszPlayerName as u64);
+
+//     if name_pointer == 0 {
+//         return String::from("?");
+//     }
+
+//     process.read_string(name_pointer)
+// }

@@ -147,8 +147,8 @@ impl ProcessHandle {
             bail!("Invalid ELF Header");
         }
 
-        const SYMBOL_TABLE_ENTRY_SIZE: u64 = 0x18; // Size of each symbol table entry
-        const ADDRESS_SIZE: u64 = 0x08; // Size of address entries
+        const SYMBOL_TABLE_ENTRY_SIZE: u64 = 0x18;
+        const ADDRESS_SIZE: u64 = 0x08;
 
         // Resolve string table and symbol table addresses
         let string_table = self
@@ -174,7 +174,7 @@ impl ProcessHandle {
                 .read_string(string_table + st_name_offset as u64)
                 .context("Failed to read symbol name")?;
 
-            debug!("Checking symbol: {}", symbol_name);
+            // debug!("Checking symbol: {}", symbol_name);
 
             // Compare symbol name with the target export name
             if symbol_name == export_name {
@@ -354,6 +354,68 @@ impl ProcessHandle {
             .context("Tag not found in Program Header Table")
     }
 
+    pub fn scan_pattern(
+        &self,
+        pattern: &[u8],
+        mask: &[u8],
+        base_address: u64,
+    ) -> Result<Option<u64>> {
+        if pattern.len() != mask.len() {
+            bail!(
+                "pattern is {} bytes, mask is {} bytes long",
+                pattern.len(),
+                mask.len()
+            );
+        }
+
+        let module = self.dump_module(base_address)?;
+        if module.len() < 500 {
+            return Ok(None);
+        }
+
+        let pattern_length = pattern.len();
+        let stop_index = module.len() - pattern_length;
+        'outer: for i in 0..stop_index {
+            for j in 0..pattern_length {
+                if mask[j] == b'x' && module[i + j] != pattern[j] {
+                    continue 'outer;
+                }
+            }
+
+            return Ok(Some(base_address + i as u64));
+        }
+
+        Ok(None)
+    }
+
+    /// Gets a "convar" by convar_name.
+    pub fn get_convar(&self, convar_offset: Address, convar_name: &str) -> Result<Option<Address>> {
+        if convar_offset.is_null() {
+            return Ok(None);
+        }
+
+        let convar_offset: u64 = convar_offset.into();
+
+        let objects = self.read_u64(convar_offset + 0x40)?;
+
+        for i in 0..self.read_u64(convar_offset + 0xA0)? {
+            let object = self.read_u64(objects + i * 0x10)?;
+
+            if object == 0 {
+                break;
+            }
+
+            let name_address = self.read_u64(object)?;
+            let name = self.read_string(name_address)?;
+
+            if name == convar_name {
+                return Ok(Some(object.into()))
+            }
+        }
+
+        Ok(None)
+    }
+
     /// Below are read util funcs
     #[allow(unused)]
     pub fn read_i8(&self, address: u64) -> i8 {
@@ -430,7 +492,7 @@ impl ProcessHandle {
         let mut string = String::new();
         let mut i = address;
         loop {
-            let c = self.read_u8(i)?;
+            let c = self.read_u8(i).unwrap_or(0);
 
             if c == 0 {
                 break;
