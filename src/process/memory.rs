@@ -98,7 +98,6 @@ pub fn read_u32_vec(data: &[u8], address: u64) -> Address {
     val.into()
 }
 
-
 macro_rules! impl_for_address {
     ($trait:ident, $method:ident) => {
         impl std::ops::$trait for Address {

@@ -5,7 +5,6 @@ use super::{
     process::ProcessHandle,
 };
 use anyhow::{Context, Result};
-use log::info;
 
 #[derive(Debug, Default)]
 pub struct Offsets {
@@ -126,8 +125,7 @@ impl DirectOffsets {
                 "xxx????xxxxx".as_bytes(),
                 library_offsets.client.into(),
             )?
-            .context("Unable to find local player controller")?
-            .into();
+            .context("Unable to find local player controller")?;
 
         self.local_controller = process
             .get_relative_address(direct_address_ptr, 0x03, 0x08)?

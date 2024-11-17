@@ -1,4 +1,5 @@
 use anyhow::{bail, Context, Result};
+use serde::Serialize;
 use std::collections::HashMap;
 
 use crate::process::{memory::Address, offsets::Offsets, process::ProcessHandle};
@@ -6,7 +7,7 @@ use crate::process::{memory::Address, offsets::Offsets, process::ProcessHandle};
 pub type ControllerAddress = Address;
 pub type PawnAddress = Address;
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize)]
 pub struct Player {
     pub name: String,
     pub health: i32,
@@ -28,7 +29,7 @@ pub struct Player {
 }
 
 #[repr(u8)]
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, Serialize)]
 pub enum Team {
     #[default]
     Speactator = 1,
@@ -37,7 +38,7 @@ pub enum Team {
 }
 
 #[repr(u8)]
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, Serialize)]
 pub enum LifeState {
     Alive, // Alive
     Dying, // Playing death animation falling off a ledge
@@ -47,7 +48,7 @@ pub enum LifeState {
     DiscardBody,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize)]
 pub struct Vec3 {
     pub x: f32,
     pub y: f32,
@@ -278,7 +279,7 @@ impl Cs2Interface {
             let weapon_entity = self.get_client_entity(weapon_index as u64)?;
 
             if let Some(entity) = weapon_entity {
-                let weapon_name = self.get_weapon_name(entity.into())?;
+                let weapon_name = self.get_weapon_name(entity)?;
 
                 if let Some(weapon_name) = weapon_name {
                     weapon_names.push(weapon_name);
@@ -348,9 +349,8 @@ impl Cs2Interface {
     }
 
     fn get_color(&self, controller: ControllerAddress) -> Result<i32> {
-        Ok(self
-            .process_handle
-            .read_i32(controller + self.offsets.network.controller.m_iCompTeammateColor)?)
+        self.process_handle
+            .read_i32(controller + self.offsets.network.controller.m_iCompTeammateColor)
     }
 
     fn get_position(&self, pawn: PawnAddress) -> Result<Vec3> {
@@ -369,21 +369,18 @@ impl Cs2Interface {
     }
 
     fn get_rotation(&self, pawn: PawnAddress) -> Result<f32> {
-        Ok(self
-            .process_handle
-            .read_f32(pawn + self.offsets.network.pawn.m_angEyeAngles)?)
+        self.process_handle
+            .read_f32(pawn + self.offsets.network.pawn.m_angEyeAngles)
     }
 
     fn get_ping(&self, controller: ControllerAddress) -> Result<i32> {
-        Ok(self
-            .process_handle
-            .read_i32(controller + self.offsets.network.controller.m_iPing)?)
+        self.process_handle
+            .read_i32(controller + self.offsets.network.controller.m_iPing)
     }
 
     fn get_steam_id(&self, controller: ControllerAddress) -> Result<u64> {
-        Ok(self
-            .process_handle
-            .read_u64(controller + self.offsets.network.controller.m_steamID)?)
+        self.process_handle
+            .read_u64(controller + self.offsets.network.controller.m_steamID)
     }
 
     fn get_spectator_target(&self, pawn: PawnAddress) -> Result<Option<PawnAddress>> {

@@ -1,11 +1,10 @@
 use anyhow::Result;
 use cs2_interface::Cs2Interface;
-use log::info;
-use process::{offsets::Offsets, pid::Pid};
+use process::pid::Pid;
 
 pub(crate) mod constant;
-pub mod process; 
 pub mod cs2_interface;
+pub mod process;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -18,6 +17,6 @@ async fn main() -> Result<()> {
     .await?;
 
     let interface = Cs2Interface::new(process)?;
-    
+
     Ok(())
 }

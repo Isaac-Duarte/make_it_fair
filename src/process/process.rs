@@ -11,7 +11,7 @@ use super::{
     pid::Pid,
 };
 use anyhow::{bail, Context, Ok, Result};
-use log::{debug, info, warn};
+use log::{debug, warn};
 
 pub struct ProcessHandle {
     pub pid: Pid,
@@ -46,9 +46,9 @@ impl ProcessHandle {
         let maps = File::open(format!("/proc/{}/maps", self.pid))
             .context("Unable to read memory map file")?;
 
-        let mut reader = BufReader::new(maps).lines();
+        let reader = BufReader::new(maps).lines();
 
-        while let Some(line) = reader.next() {
+        for line in reader {
             let line = line?;
 
             if !line.contains(module_name) {

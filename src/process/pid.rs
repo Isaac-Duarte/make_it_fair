@@ -66,7 +66,7 @@ mod test {
     async fn test_cs2_proc() {
         let pid = Pid::from_process_name(constant::PROCESS_NAME).await;
 
-        assert!(!pid.is_err());
+        assert!(pid.is_ok());
         assert!(pid.unwrap().validate());
     }
 }
