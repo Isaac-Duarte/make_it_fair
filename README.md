@@ -1,6 +1,6 @@
-# Make it far
+# Make it fair
 
-This project is an external radar for Counter-Strike 2 (CS2) designed specifically for Linux. It provides a detailed and extensible interface for retrieving and visualizing in-game player data. The offsets should rarely need to be updated as they are scanned before the process launches.
+This project is an external radar for Counter-Strike 2 (CS2) designed specifically for Linux. It provides a detailed and extensible interface for retrieving and visualizing in-game player data. The offsets should rarely need to be updated as they are scanned before the process launches. It is meant to be publicly pasted into a lobby for trolling purposes
 
 ---
 
