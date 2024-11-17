@@ -52,7 +52,7 @@ pub struct DirectOffsets {
 }
 
 impl Offsets {
-    pub async fn find_offsets(process: &ProcessHandle) -> Result<Offsets> {
+    pub fn find_offsets(process: &ProcessHandle) -> Result<Offsets> {
         let mut offsets = Offsets::default();
 
         // Set Shared Object offsets

@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Address(pub(crate) u64);
+pub struct Address(u64);
 
 impl Address {
     pub const NULL: Address = Address(0);
@@ -97,3 +97,37 @@ pub fn read_u32_vec(data: &[u8], address: u64) -> Address {
 
     val.into()
 }
+
+
+macro_rules! impl_for_address {
+    ($trait:ident, $method:ident) => {
+        impl std::ops::$trait for Address {
+            type Output = Address;
+            fn $method(self, rhs: Address) -> Address {
+                Address(self.0.$method(rhs.0))
+            }
+        }
+    };
+    ($trait:ident, $method:ident, $rhs:ty) => {
+        impl std::ops::$trait<$rhs> for Address {
+            type Output = Address;
+            fn $method(self, rhs: $rhs) -> Address {
+                Address(self.0.$method(rhs))
+            }
+        }
+    };
+}
+
+// Implement common arithmetic traits
+impl_for_address!(Add, add);
+impl_for_address!(Sub, sub);
+impl_for_address!(Mul, mul);
+impl_for_address!(Div, div);
+impl_for_address!(Rem, rem);
+
+// Implement bitwise traits
+impl_for_address!(BitAnd, bitand);
+impl_for_address!(BitOr, bitor);
+impl_for_address!(BitXor, bitxor);
+impl_for_address!(Shl, shl, u32);
+impl_for_address!(Shr, shr, u32);

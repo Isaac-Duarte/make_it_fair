@@ -1,10 +1,11 @@
 use anyhow::Result;
+use cs2_interface::Cs2Interface;
 use log::info;
 use process::{offsets::Offsets, pid::Pid};
 
-pub mod constant;
-pub mod model;
-pub mod process;
+pub(crate) mod constant;
+pub mod process; 
+pub mod cs2_interface;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -16,20 +17,7 @@ async fn main() -> Result<()> {
     )
     .await?;
 
-    let offsets = Offsets::find_offsets(&process).await?;
-
-    info!("{:?}", offsets);
-
+    let interface = Cs2Interface::new(process)?;
+    
     Ok(())
 }
-
-// fn get_pawn_name(process: &ProcessHandle, controller: u64) -> String {
-//     let name_pointer = process
-//         .read_u64(controller + cs2dumper::client::CBasePlayerController::m_iszPlayerName as u64);
-
-//     if name_pointer == 0 {
-//         return String::from("?");
-//     }
-
-//     process.read_string(name_pointer)
-// }

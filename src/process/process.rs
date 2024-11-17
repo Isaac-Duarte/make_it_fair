@@ -369,73 +369,44 @@ impl ProcessHandle {
                 mask.len()
             );
         }
-    
+
         let module = self
             .dump_module(base_address)
             .context("Failed to dump module during pattern scan")?;
-    
+
         if module.len() < pattern.len() {
             return Ok(None);
         }
-    
+
         let pattern_length = pattern.len();
         let stop_index = module.len() - pattern_length;
-    
+
         // Scan through the module for the pattern
         for i in 0..stop_index {
             let mut matched = true;
-    
+
             for j in 0..pattern_length {
                 if mask[j] == b'x' && module[i + j] != pattern[j] {
                     matched = false;
                     break;
                 }
             }
-    
+
             // If the pattern is fully matched, calculate and return the absolute address
             if matched {
                 let match_address = base_address + i as u64;
                 debug!(
                     "Pattern matched at offset {:#x} (absolute address: {:#x})",
-                    i,
-                    match_address
+                    i, match_address
                 );
                 return Ok(Some(match_address));
             }
         }
-    
+
         debug!(
             "Pattern not found in module starting at base address {:#x}",
             base_address
         );
-    
-        Ok(None)
-    }
-
-    /// Gets a "convar" by convar_name.
-    pub fn get_convar(&self, convar_offset: Address, convar_name: &str) -> Result<Option<Address>> {
-        if convar_offset.is_null() {
-            return Ok(None);
-        }
-
-        let convar_offset: u64 = convar_offset.into();
-
-        let objects = self.read_u64(convar_offset + 0x40)?;
-
-        for i in 0..self.read_u64(convar_offset + 0xA0)? {
-            let object = self.read_u64(objects + i * 0x10)?;
-
-            if object == 0 {
-                break;
-            }
-
-            let name_address = self.read_u64(object)?;
-            let name = self.read_string(name_address)?;
-
-            if name == convar_name {
-                return Ok(Some(object.into()))
-            }
-        }
 
         Ok(None)
     }
@@ -449,10 +420,19 @@ impl ProcessHandle {
     }
 
     #[allow(unused)]
-    pub fn read_u8(&self, address: u64) -> Result<u8> {
+    pub fn read_u8(&self, address: impl Into<u64>) -> Result<u8> {
         let mut buffer = [0; 1];
-        self.memory.read_at(&mut buffer, address)?;
+        self.memory.read_at(&mut buffer, address.into())?;
         Ok(u8::from_ne_bytes(buffer))
+    }
+
+    #[allow(unused)]
+    pub fn read_u8_address(&self, address: impl Into<u64>) -> Result<Address> {
+        let mut buffer = [0; 1];
+        self.memory.read_at(&mut buffer, address.into())?;
+        let val: u64 = u8::from_ne_bytes(buffer).into();
+
+        Ok(val.into())
     }
 
     #[allow(unused)]
@@ -470,16 +450,16 @@ impl ProcessHandle {
     }
 
     #[allow(unused)]
-    pub fn read_i32(&self, address: u64) -> Result<i32> {
+    pub fn read_i32(&self, address: impl Into<u64>) -> Result<i32> {
         let mut buffer = [0; 4];
-        self.memory.read_at(&mut buffer, address)?;
+        self.memory.read_at(&mut buffer, address.into())?;
         Ok(i32::from_ne_bytes(buffer))
     }
 
     #[allow(unused)]
-    pub fn read_u32(&self, address: u64) -> Result<u32> {
+    pub fn read_u32(&self, address: impl Into<u64>) -> Result<u32> {
         let mut buffer = [0; 4];
-        self.memory.read_at(&mut buffer, address)?;
+        self.memory.read_at(&mut buffer, address.into())?;
         Ok(u32::from_ne_bytes(buffer))
     }
 
@@ -491,24 +471,25 @@ impl ProcessHandle {
     }
 
     #[allow(unused)]
-    pub fn read_u64(&self, address: u64) -> Result<u64> {
+    pub fn read_u64(&self, address: impl Into<u64>) -> Result<u64> {
         let mut buffer = [0; 8];
-        self.memory.read_at(&mut buffer, address)?;
+        self.memory.read_at(&mut buffer, address.into())?;
         Ok(u64::from_ne_bytes(buffer))
     }
 
     #[allow(unused)]
-    pub fn read_u64_address(&self, address: u64) -> Result<Address> {
+    pub fn read_u64_address(&self, address: impl Into<u64>) -> Result<Address> {
         let mut buffer = [0; 8];
-        self.memory.read_at(&mut buffer, address)?;
+        self.memory.read_at(&mut buffer, address.into())?;
         Ok(u64::from_ne_bytes(buffer).into())
     }
 
     #[allow(unused)]
-    pub fn read_f32(&self, address: u64) -> f32 {
+    pub fn read_f32(&self, address: impl Into<u64>) -> Result<f32> {
         let mut buffer = [0; 4];
-        self.memory.read_at(&mut buffer, address).unwrap_or(0);
-        f32::from_ne_bytes(buffer)
+        self.memory.read_at(&mut buffer, address.into())?;
+
+        Ok(f32::from_ne_bytes(buffer))
     }
 
     #[allow(unused)]
@@ -519,9 +500,10 @@ impl ProcessHandle {
     }
 
     #[allow(unused)]
-    pub fn read_string(&self, address: u64) -> Result<String> {
+    pub fn read_string(&self, address: impl Into<u64>) -> Result<String> {
         let mut string = String::new();
-        let mut i = address;
+        let mut i = address.into();
+
         loop {
             let c = self.read_u8(i).unwrap_or(0);
 
