@@ -14,3 +14,10 @@ make_it_fair = { path = "../" }
 axum = { version = "0.7.9", features = ["ws"] }
 serde_json = "1.0.133"
 tower-http = { version = "0.6.1", features = ["fs"] }
+
+[profile.release]
+opt-level = "z"
+debug = false
+lto = true
+codegen-units = 1
+strip = true
