@@ -11,10 +11,10 @@ use axum::{
 use log::{error, info};
 use make_it_fair::{constant, cs2_interface::Player, Cs2Interface, Pid, ProcessHandle};
 use serde::Serialize;
-use tower_http::services::ServeDir;
 use std::{net::SocketAddr, sync::Arc};
 use tokio::sync::broadcast;
 use tokio::time::Duration;
+use tower_http::services::ServeDir;
 
 #[derive(Serialize, Clone)]
 struct Payload {
@@ -74,7 +74,11 @@ fn cs2_thread(
 ) -> Result<(), Box<dyn std::error::Error>> {
     loop {
         if tx.receiver_count() > 0 {
-            let players = interface.get_players()?;
+            let players = interface
+                .get_players()?
+                .into_iter()
+                .filter(|player| player.health > 0)
+                .collect();
 
             if let Err(e) = tx.send(Payload { players: players }) {
                 error!("Failed to send data: {}", e);

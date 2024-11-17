@@ -231,7 +231,7 @@ impl Cs2Interface {
         // CEntityIdentity, 0x10 = m_pEntity
         let weapon_entity_identity = self
             .process_handle
-            .read_u64_address(weapon_instance + Address::from(0x10))?;
+            .read_u64_address(weapon_instance + Address::from(0x10)).context("Unable to get weapon entity identity")?;
 
         if weapon_entity_identity.is_null() {
             return Ok(None);
@@ -240,13 +240,13 @@ impl Cs2Interface {
         // 0x20 = m_designerName (pointer -> string)
         let weapon_name_pointer = self
             .process_handle
-            .read_u64_address(weapon_entity_identity + Address::from(0x20))?;
+            .read_u64_address(weapon_entity_identity + Address::from(0x20)).context("Unable to get weapon name pointer")?;
 
         if weapon_name_pointer.is_null() {
             return Ok(None);
         }
 
-        Ok(Some(self.process_handle.read_string(weapon_name_pointer)?))
+        Ok(Some(self.process_handle.read_string(weapon_name_pointer).context("UNable to read weapon name from pointer")?))
     }
 
     // Gets all weapons given the pawn
