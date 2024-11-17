@@ -14,6 +14,7 @@
         .player-icon {
             position: absolute;
             transform: translate(-50%, -50%);
+            transition: top 0.1s linear, left 0.1s linear;
         }
         .player-dot {
             width: 10px;
@@ -21,6 +22,7 @@
             background-color: red; /* Change color based on team */
             border-radius: 50%;
             border: 2px solid white; /* Optional: add a border for better visibility */
+            transition: transform 0.1s linear;
         }
         .player-info {
             position: absolute;
@@ -60,6 +62,9 @@
             zoom: 1.100000023841858
         };
 
+        // Keep track of player elements
+        const playerElements = {};
+
         // WebSocket connection
         const ws = new WebSocket('ws://' + window.location.host + '/ws');
 
@@ -74,62 +79,107 @@
 
         function updatePlayers(players) {
             const radar = document.getElementById('radar');
-
-            // Clear existing icons
-            radar.innerHTML = '';
+            const currentIds = new Set();
 
             players.forEach(player => {
-                const icon = document.createElement('div');
-                icon.classList.add('player-icon');
+                const playerId = player.name; // Use player.name or another unique property
+                currentIds.add(playerId);
 
-                // Create dot representing the player
-                const dot = document.createElement('div');
-                dot.classList.add('player-dot');
+                let icon = playerElements[playerId];
 
-                // Color-code based on team
-                if (player.team === 'Terrorist') {
-                    dot.style.backgroundColor = 'red';
-                } else if (player.team === 'CounterTerrorist') {
-                    dot.style.backgroundColor = 'blue';
+                if (icon) {
+                    // Update existing icon
+                    const pos = convertPosition(player.position);
+                    icon.style.left = `${pos.y}px`;
+                    icon.style.top = `${pos.x}px`;
+
+                    // Update rotation
+                    const rotationDegrees = player.rotation;
+                    const dot = icon.querySelector('.player-dot');
+                    dot.style.transform = `rotate(${rotationDegrees}deg)`;
+
+                    // Update player info
+                    const info = icon.querySelector('.player-info');
+
+                    const name = info.querySelector('.name');
+                    name.textContent = player.name;
+
+                    const healthArmor = info.querySelector('.health-armor');
+                    healthArmor.textContent = `HP: ${player.health} / Armor: ${player.armor}`;
+
+                    const weapon = info.querySelector('.weapon');
+                    weapon.textContent = `Weapon: ${player.weapon}`;
+
+                    // Update team color
+                    if (player.team === 'Terrorist') {
+                        dot.style.backgroundColor = 'red';
+                    } else if (player.team === 'CounterTerrorist') {
+                        dot.style.backgroundColor = 'blue';
+                    }
+                } else {
+                    // Create new icon
+                    const newIcon = document.createElement('div');
+                    newIcon.classList.add('player-icon');
+
+                    // Create dot representing the player
+                    const dot = document.createElement('div');
+                    dot.classList.add('player-dot');
+
+                    // Color-code based on team
+                    if (player.team === 'Terrorist') {
+                        dot.style.backgroundColor = 'red';
+                    } else if (player.team === 'CounterTerrorist') {
+                        dot.style.backgroundColor = 'blue';
+                    }
+
+                    // Rotate the dot to represent player's facing direction
+                    const rotationDegrees = player.rotation;
+                    dot.style.transform = `rotate(${rotationDegrees}deg)`;
+
+                    // Player info container
+                    const info = document.createElement('div');
+                    info.classList.add('player-info');
+
+                    // Player name
+                    const name = document.createElement('div');
+                    name.classList.add('name');
+                    name.textContent = player.name;
+                    info.appendChild(name);
+
+                    // Health and Armor
+                    const healthArmor = document.createElement('div');
+                    healthArmor.classList.add('health-armor');
+                    healthArmor.textContent = `HP: ${player.health} / Armor: ${player.armor}`;
+                    info.appendChild(healthArmor);
+
+                    // Weapon
+                    const weapon = document.createElement('div');
+                    weapon.classList.add('weapon');
+                    weapon.textContent = `Weapon: ${player.weapon}`;
+                    info.appendChild(weapon);
+
+                    // Append dot and info to icon
+                    newIcon.appendChild(dot);
+                    newIcon.appendChild(info);
+
+                    // Convert player position to radar coordinates
+                    const pos = convertPosition(player.position);
+                    newIcon.style.left = `${pos.y}px`;
+                    newIcon.style.top = `${pos.x}px`;
+
+                    radar.appendChild(newIcon);
+                    playerElements[playerId] = newIcon;
                 }
-
-                // Rotate the dot to represent player's facing direction
-                const rotationDegrees = player.rotation;
-                dot.style.transform = `rotate(${rotationDegrees}deg)`;
-
-                // Player info container
-                const info = document.createElement('div');
-                info.classList.add('player-info');
-
-                // Player name
-                const name = document.createElement('div');
-                name.classList.add('name');
-                name.textContent = player.name;
-                info.appendChild(name);
-
-                // Health and Armor
-                const healthArmor = document.createElement('div');
-                healthArmor.classList.add('health-armor');
-                healthArmor.textContent = `HP: ${player.health} / Armor: ${player.armor}`;
-                info.appendChild(healthArmor);
-
-                // Weapon
-                const weapon = document.createElement('div');
-                weapon.classList.add('weapon');
-                weapon.textContent = `Weapon: ${player.weapon}`;
-                info.appendChild(weapon);
-
-                // Append dot and info to icon
-                icon.appendChild(dot);
-                icon.appendChild(info);
-
-                // Convert player position to radar coordinates
-                const pos = convertPosition(player.position);
-                icon.style.left = `${pos.y}px`;
-                icon.style.top = `${pos.x}px`;
-
-                radar.appendChild(icon);
             });
+
+            // Remove any icons for players that are no longer present
+            for (const id in playerElements) {
+                if (!currentIds.has(id)) {
+                    const icon = playerElements[id];
+                    icon.parentNode.removeChild(icon);
+                    delete playerElements[id];
+                }
+            }
         }
 
         function convertPosition(position) {
@@ -137,8 +187,8 @@
             const radarWidth = radar.clientWidth;
             const radarHeight = radar.clientHeight;
 
-            let x = (position.x - mapping.pos_x) / (mapping.scale);
-            let y = (mapping.pos_y - position.y) / (mapping.scale);
+            let x = (position.x - mapping.pos_x) / mapping.scale;
+            let y = (mapping.pos_y - position.y) / mapping.scale;
 
             if (mapping.rotate) {
                 [x, y] = [y, x];
