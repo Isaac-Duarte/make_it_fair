@@ -354,37 +354,61 @@ impl ProcessHandle {
             .context("Tag not found in Program Header Table")
     }
 
+    /// Scans a module's memory for a specific byte pattern using a mask.
     pub fn scan_pattern(
         &self,
         pattern: &[u8],
         mask: &[u8],
         base_address: u64,
     ) -> Result<Option<u64>> {
+        // Ensure pattern and mask lengths match
         if pattern.len() != mask.len() {
             bail!(
-                "pattern is {} bytes, mask is {} bytes long",
+                "Pattern is {} bytes, mask is {} bytes long. Lengths must match.",
                 pattern.len(),
                 mask.len()
             );
         }
-
-        let module = self.dump_module(base_address)?;
-        if module.len() < 500 {
+    
+        let module = self
+            .dump_module(base_address)
+            .context("Failed to dump module during pattern scan")?;
+    
+        if module.len() < pattern.len() {
             return Ok(None);
         }
-
+    
         let pattern_length = pattern.len();
         let stop_index = module.len() - pattern_length;
-        'outer: for i in 0..stop_index {
+    
+        // Scan through the module for the pattern
+        for i in 0..stop_index {
+            let mut matched = true;
+    
             for j in 0..pattern_length {
                 if mask[j] == b'x' && module[i + j] != pattern[j] {
-                    continue 'outer;
+                    matched = false;
+                    break;
                 }
             }
-
-            return Ok(Some(base_address + i as u64));
+    
+            // If the pattern is fully matched, calculate and return the absolute address
+            if matched {
+                let match_address = base_address + i as u64;
+                debug!(
+                    "Pattern matched at offset {:#x} (absolute address: {:#x})",
+                    i,
+                    match_address
+                );
+                return Ok(Some(match_address));
+            }
         }
-
+    
+        debug!(
+            "Pattern not found in module starting at base address {:#x}",
+            base_address
+        );
+    
         Ok(None)
     }
 
@@ -471,6 +495,13 @@ impl ProcessHandle {
         let mut buffer = [0; 8];
         self.memory.read_at(&mut buffer, address)?;
         Ok(u64::from_ne_bytes(buffer))
+    }
+
+    #[allow(unused)]
+    pub fn read_u64_address(&self, address: u64) -> Result<Address> {
+        let mut buffer = [0; 8];
+        self.memory.read_at(&mut buffer, address)?;
+        Ok(u64::from_ne_bytes(buffer).into())
     }
 
     #[allow(unused)]
