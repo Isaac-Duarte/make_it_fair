@@ -80,7 +80,7 @@ fn cs2_thread(
                 .filter(|player| player.health > 0)
                 .collect();
 
-            if let Err(e) = tx.send(Payload { players: players }) {
+            if let Err(e) = tx.send(Payload { players }) {
                 error!("Failed to send data: {}", e);
             }
         }
