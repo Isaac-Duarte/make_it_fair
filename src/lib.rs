@@ -1,4 +1,4 @@
-pub(crate) mod constant;
+pub mod constant;
 pub mod cs2_interface;
 pub mod process;
 

@@ -1,4 +1,5 @@
 use anyhow::{bail, Context, Result};
+use log::info;
 use serde::Serialize;
 use std::collections::HashMap;
 
@@ -448,7 +449,8 @@ impl Cs2Interface {
             .unwrap_or_default();
         player.weapon = self
             .get_weapon(pawn)
-            .context("Unable to get player's weapon")?
+            .ok()
+            .flatten()
             .unwrap_or("Unknown".to_string());
         player.weapons = self
             .get_weapons(pawn)
@@ -487,16 +489,25 @@ impl Cs2Interface {
         let mut players = vec![];
 
         for i in 1..=64 {
-            let controller = match self.get_client_entity(i)? {
+            let controller = match self
+                .get_client_entity(i)
+                .context("Unable to get client entity")?
+            {
                 Some(controller) => controller,
                 None => {
                     continue;
                 }
             };
 
-            let pawn = self.get_pawn(controller)?;
+            let pawn = match self.get_pawn(controller) {
+                Ok(pawn) => pawn,
+                Err(_) => continue,
+            };
 
-            let mut player = match self.get_player(controller)? {
+            let mut player = match self
+                .get_player(controller)
+                .context("Unable to get player")?
+            {
                 Some(player) => player,
                 None => continue,
             };
@@ -515,5 +526,18 @@ impl Cs2Interface {
         }
 
         Ok(players)
+    }
+
+    pub fn get_convar_value_str(&self, convar: &str) -> Result<Option<String>> {
+        let convar = *match self.convars.get(convar) {
+            Some(address) => address,
+            None => return Ok(None),
+        };
+
+        let offset = convar + Address::from(64);
+
+        let value = self.process_handle.read_string(offset)?;
+
+        Ok(Some(value))
     }
 }

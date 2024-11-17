@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CS:GO Radar with Player Details</title>
+    <style>
+        #radar {
+            position: relative;
+            width: 1024px; /* Adjust to your radar image size */
+            height: 1024px;
+            background-image: url('assets/image/de_dust2_radar_psd.png');
+            background-size: cover;
+            background-position: center;
+        }
+        .player-icon {
+            position: absolute;
+            transform: translate(-50%, -50%);
+        }
+        .player-dot {
+            width: 10px;
+            height: 10px;
+            background-color: red; /* Change color based on team */
+            border-radius: 50%;
+            border: 2px solid white; /* Optional: add a border for better visibility */
+        }
+        .player-info {
+            position: absolute;
+            top: 14px; /* Slightly adjusted to account for new padding */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 130px;
+            text-align: center;
+            font-size: 11px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent background */
+            padding: 6px;
+            border-radius: 5px;
+        }
+        .player-info .name {
+            font-weight: bold;
+            color: #FFD700; /* Gold color for player names */
+        }
+        .player-info .health-armor,
+        .player-info .weapon {
+            margin-top: 3px;
+            font-size: 0.8rem;
+            color: #E0E0E0; /* Light gray for subtext */
+        }
+    </style>
+</head>
+<body>
+    <div id="radar"></div>
+
+    <script>
+        // Mapping parameters
+        const mapping = {
+            pos_x: -2476.0,
+            pos_y: 3239.0,
+            scale: 4.400000095367432,
+            rotate: 1,
+            zoom: 1.100000023841858
+        };
+
+        // WebSocket connection
+        const ws = new WebSocket('ws://' + window.location.host + '/ws');
+
+        ws.onopen = function() {
+            console.log('WebSocket connection established.');
+        };
+
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            updatePlayers(data.players);
+        };
+
+        function updatePlayers(players) {
+            const radar = document.getElementById('radar');
+
+            // Clear existing icons
+            radar.innerHTML = '';
+
+            players.forEach(player => {
+                const icon = document.createElement('div');
+                icon.classList.add('player-icon');
+
+                // Create dot representing the player
+                const dot = document.createElement('div');
+                dot.classList.add('player-dot');
+
+                // Color-code based on team
+                if (player.team === 'Terrorist') {
+                    dot.style.backgroundColor = 'red';
+                } else if (player.team === 'CounterTerrorist') {
+                    dot.style.backgroundColor = 'blue';
+                }
+
+                // Rotate the dot to represent player's facing direction
+                const rotationDegrees = player.rotation;
+                dot.style.transform = `rotate(${rotationDegrees}deg)`;
+
+                // Player info container
+                const info = document.createElement('div');
+                info.classList.add('player-info');
+
+                // Player name
+                const name = document.createElement('div');
+                name.classList.add('name');
+                name.textContent = player.name;
+                info.appendChild(name);
+
+                // Health and Armor
+                const healthArmor = document.createElement('div');
+                healthArmor.classList.add('health-armor');
+                healthArmor.textContent = `HP: ${player.health} / Armor: ${player.armor}`;
+                info.appendChild(healthArmor);
+
+                // Weapon
+                const weapon = document.createElement('div');
+                weapon.classList.add('weapon');
+                weapon.textContent = `Weapon: ${player.weapon}`;
+                info.appendChild(weapon);
+
+                // Append dot and info to icon
+                icon.appendChild(dot);
+                icon.appendChild(info);
+
+                // Convert player position to radar coordinates
+                const pos = convertPosition(player.position);
+                icon.style.left = `${pos.y}px`;
+                icon.style.top = `${pos.x}px`;
+
+                radar.appendChild(icon);
+            });
+        }
+
+        function convertPosition(position) {
+            const radar = document.getElementById('radar');
+            const radarWidth = radar.clientWidth;
+            const radarHeight = radar.clientHeight;
+
+            let x = (position.x - mapping.pos_x) / (mapping.scale);
+            let y = (mapping.pos_y - position.y) / (mapping.scale);
+
+            if (mapping.rotate) {
+                [x, y] = [y, x];
+            }
+
+            // Map to radar image dimensions
+            x = x * (radarWidth / 1024);
+            y = y * (radarHeight / 1024);
+
+            return { x, y };
+        }
+    </script>
+</body>
+</html>
