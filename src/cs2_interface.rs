@@ -1,5 +1,4 @@
 use anyhow::{bail, Context, Result};
-use log::info;
 use serde::Serialize;
 use std::collections::HashMap;
 

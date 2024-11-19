@@ -7,7 +7,7 @@
             position: relative;
             width: 1024px; /* Adjust to your radar image size */
             height: 1024px;
-            background-image: url('assets/image/de_dust2_radar_psd.png');
+            background-image: url('assets/image/de_mirage_radar_psd.png');
             background-size: cover;
             background-position: center;
         }
@@ -51,22 +51,22 @@
 </head>
 <body>
     <div id="radar"></div>
-
+    
     <script>
         // Mapping parameters
         const mapping = {
-            pos_x: -2476.0,
-            pos_y: 3239.0,
-            scale: 4.400000095367432,
+            pos_x: -3230.0,
+            pos_y: 1713.0,
+            scale: 5.0,
             rotate: 1,
-            zoom: 1.100000023841858
+            zoom: 0.0
         };
 
         // Keep track of player elements
         const playerElements = {};
 
         // WebSocket connection
-        const ws = new WebSocket('ws://' + window.location.host + '/ws');
+        const ws = new WebSocket('wss://' + window.location.host + '/ws');
 
         ws.onopen = function() {
             console.log('WebSocket connection established.');

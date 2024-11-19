@@ -6,7 +6,7 @@ use axum::{
     },
     response::IntoResponse,
     routing::get,
-    Router, ServiceExt,
+    Router,
 };
 use log::{error, info};
 use make_it_fair::{constant, cs2_interface::Player, Cs2Interface, Pid, ProcessHandle};
