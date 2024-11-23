@@ -64,10 +64,11 @@
       .player-info .name {
         font-weight: bold;
         color: #ffd700; /* Gold color for player names */
+        font-size: 0.7rem;
       }
       .player-info .health-armor,
       .player-info .weapon {
-        font-size: 0.8rem;
+        font-size: 0.6rem;
         color: #e0e0e0; /* Light gray for subtext */
       }
     </style>
@@ -116,11 +117,26 @@
             id="radar"
             class="absolute w-[1024px] h-[1024px]"
             style="
-              background-image: url('assets/image/de_inferno_radar_psd.png');
+              background-image: url('assets/image/de_nuke_radar_psd.png');
               background-size: cover;
               background-position: center;
             "
           ></div>
+        </div>
+
+        <div class="flex gap-2 flex-center items-center ml-2">
+          <button
+            class="mt-auto bg-gray-600 h-5 w-5 text-2xl flex justify-center items-center"
+            onclick="decreaseZoom()"
+          >
+            -
+          </button>
+          <button
+            class="mt-auto bg-gray-600 h-5 w-5 text-2xl flex justify-center items-center"
+            onclick="increaseZoom()"
+          >
+            +
+          </button>
         </div>
       </div>
 
@@ -141,9 +157,9 @@
     <script>
       // Mapping parameters
       const mapping = {
-        pos_x: -2087.0,
-        pos_y: 3870.0,
-        scale: 4.9,
+        pos_x: -3453.0,
+        pos_y: 2887.0,
+        scale: 7.0,
         rotate: 1,
         zoom: 1.100000023841858,
       };
@@ -159,6 +175,8 @@
       let targetRadarTranslateX = 0;
       let targetRadarTranslateY = 0;
       let targetRadarScale = 1;
+
+      let zoomedInScale = 1;
 
       // WebSocket connection
       const ws = new WebSocket("wss://" + window.location.host + "/ws");
@@ -268,7 +286,7 @@
             healthArmor.textContent = `HP: ${player.health} / Armor: ${player.armor}`;
 
             const weapon = info.querySelector(".weapon");
-            weapon.textContent = `Weapon: ${player.weapon}`;
+            weapon.textContent = `${player.weapon}`;
 
             // Update team color
             const dot = iconData.element.querySelector(".player-dot");
@@ -405,7 +423,7 @@
           radarTranslateY = radarContainer.clientHeight / 2 - playerPos.x;
 
           // Set the desired radar scale when a player is selected
-          radarScale = 1.5; // Adjust this value for zoom level
+          radarScale = zoomedInScale;
         } else {
           // Reset transform-origin to top-left
           radar.style.transformOrigin = `top left`;
@@ -485,6 +503,14 @@
             1 / currentRadarScale
           })`;
         }
+      }
+
+      function increaseZoom() {
+        zoomedInScale *= 0.1;
+      }
+
+      function decreaseZoom() {
+        zoomedInScale = Math.max(0.1, zoomedInScale - 0.1);
       }
 
       // Start the animation loop
