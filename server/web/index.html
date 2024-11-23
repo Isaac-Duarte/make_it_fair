@@ -16,17 +16,37 @@
             transform: translate(-50%, -50%);
             transition: top 0.1s linear, left 0.1s linear;
         }
+        .player-rotation {
+            position: relative;
+            width: 14px; /* Adjusted to accommodate arrow */
+            height: 14px;
+            transform-origin: center center;
+        }
         .player-dot {
             width: 10px;
             height: 10px;
             background-color: red; /* Change color based on team */
             border-radius: 50%;
             border: 2px solid white; /* Optional: add a border for better visibility */
-            transition: transform 0.1s linear;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+        }
+        .player-arrow {
+            width: 0;
+            height: 0;
+            border-left: 7px solid transparent;
+            border-right: 7px solid transparent;
+            border-bottom: 14px solid yellow; /* Color of the arrow */
+            position: absolute;
+            top: -12px; /* Adjust this value to position the arrow correctly */
+            left: 0;
+            right: 0;
+            margin: auto;
         }
         .player-info {
             position: absolute;
-            top: 14px; /* Slightly adjusted to account for new padding */
+            top: 16px; /* Slightly adjusted to account for new padding */
             left: 50%;
             transform: translateX(-50%);
             width: 130px;
@@ -66,7 +86,7 @@
         const playerElements = {};
 
         // WebSocket connection
-        const ws = new WebSocket('ws://' + window.location.host + '/ws');
+        const ws = new WebSocket('wss://' + window.location.host + '/ws');
 
         ws.onopen = function() {
             console.log('WebSocket connection established.');
@@ -87,6 +107,12 @@
 
                 let icon = playerElements[playerId];
 
+                // Assuming player.rotation is in radians, convert to degrees
+                if (player.name == "/home/fozie") {
+                    console.log(player.rotation.y);
+                }
+                const rotationDegrees = (-player.rotation.y * mapping.rotate + 90);
+
                 if (icon) {
                     // Update existing icon
                     const pos = convertPosition(player.position);
@@ -94,9 +120,8 @@
                     icon.style.top = `${pos.x}px`;
 
                     // Update rotation
-                    const rotationDegrees = player.rotation;
-                    const dot = icon.querySelector('.player-dot');
-                    dot.style.transform = `rotate(${rotationDegrees}deg)`;
+                    const rotationContainer = icon.querySelector('.player-rotation');
+                    rotationContainer.style.transform = `rotate(${rotationDegrees}deg)`;
 
                     // Update player info
                     const info = icon.querySelector('.player-info');
@@ -111,6 +136,7 @@
                     weapon.textContent = `Weapon: ${player.weapon}`;
 
                     // Update team color
+                    const dot = icon.querySelector('.player-dot');
                     if (player.team === 'Terrorist') {
                         dot.style.backgroundColor = 'red';
                     } else if (player.team === 'CounterTerrorist') {
@@ -120,6 +146,11 @@
                     // Create new icon
                     const newIcon = document.createElement('div');
                     newIcon.classList.add('player-icon');
+
+                    // Create rotation container
+                    const rotationContainer = document.createElement('div');
+                    rotationContainer.classList.add('player-rotation');
+                    rotationContainer.style.transform = `rotate(${rotationDegrees}deg)`;
 
                     // Create dot representing the player
                     const dot = document.createElement('div');
@@ -132,9 +163,13 @@
                         dot.style.backgroundColor = 'blue';
                     }
 
-                    // Rotate the dot to represent player's facing direction
-                    const rotationDegrees = player.rotation;
-                    dot.style.transform = `rotate(${rotationDegrees}deg)`;
+                    // Create arrow representing the player's facing direction
+                    const arrow = document.createElement('div');
+                    arrow.classList.add('player-arrow');
+
+                    // Append dot and arrow to rotation container
+                    rotationContainer.appendChild(dot);
+                    rotationContainer.appendChild(arrow);
 
                     // Player info container
                     const info = document.createElement('div');
@@ -158,8 +193,8 @@
                     weapon.textContent = `Weapon: ${player.weapon}`;
                     info.appendChild(weapon);
 
-                    // Append dot and info to icon
-                    newIcon.appendChild(dot);
+                    // Append rotation container and info to icon
+                    newIcon.appendChild(rotationContainer);
                     newIcon.appendChild(info);
 
                     // Convert player position to radar coordinates

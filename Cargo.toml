@@ -8,4 +8,5 @@ anyhow = "1.0.93"
 dotenv = "0.15.0"
 log = "0.4.22"
 serde = { version = "1.0.215", features = ["derive"] }
+sourcenav = "0.2.0"
 tokio = { version = "1.41.1", features = ["full"] }

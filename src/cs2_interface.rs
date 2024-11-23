@@ -22,7 +22,7 @@ pub struct Player {
     pub has_helmet: bool,
     pub color: i32,
     pub position: Vec3,
-    pub rotation: f32,
+    pub rotation: Vec3,
     pub ping: i32,
     pub steam_id: u64,
     pub active_player: bool,
@@ -375,9 +375,18 @@ impl Cs2Interface {
         })
     }
 
-    fn get_rotation(&self, pawn: PawnAddress) -> Result<f32> {
-        self.process_handle
-            .read_f32(pawn + self.offsets.network.pawn.m_angEyeAngles)
+    fn get_rotation(&self, pawn: PawnAddress) -> Result<Vec3> {
+        let position = pawn + self.offsets.network.pawn.m_angEyeAngles;
+
+        Ok(Vec3 {
+            x: self.process_handle.read_f32(position)?,
+            y: self
+                .process_handle
+                .read_f32(position + Address::from(0x04))?,
+            z: self
+                .process_handle
+                .read_f32(position + Address::from(0x08))?,
+        })
     }
 
     fn get_ping(&self, controller: ControllerAddress) -> Result<i32> {

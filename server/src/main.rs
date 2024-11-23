@@ -71,7 +71,8 @@ async fn ws_handler(
 fn cs2_thread(
     interface: Cs2Interface,
     tx: Arc<broadcast::Sender<Payload>>,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), anyhow::Error> {
+
     loop {
         if tx.receiver_count() > 0 {
             let players = interface
